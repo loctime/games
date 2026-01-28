@@ -1,0 +1,27 @@
+{
+  "name": "Pasala - Juegos de Fiesta",
+  "short_name": "Pasala",
+  "description": "Juegos rápidos para jugar en grupo con un solo celular",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#13131f",
+  "theme_color": "#2fbf8f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-light-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
