@@ -48,6 +48,19 @@ export function HomeScreen() {
             onClick={() => setScreen("impostor-setup")}
           />
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <GameTile
+            icon="❓"
+            title="Preguntados"
+            variant="primary"
+            onClick={() => setScreen("preguntados-setup")}
+          />
+        </motion.div>
       </div>
 
       <motion.p
