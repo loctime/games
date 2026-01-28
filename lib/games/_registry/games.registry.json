@@ -1,0 +1,10 @@
+{
+  "games": [
+    {
+      "id": "tap-echo",
+      "config": "../tap-echo/game.config.json",
+      "status": "draft",
+      "enabled": true
+    }
+  ]
+}

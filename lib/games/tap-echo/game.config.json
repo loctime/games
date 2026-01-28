@@ -1,0 +1,12 @@
+{
+  "id": "tap-echo",
+  "title": "Tap Echo",
+  "description": "Cuenta toques para alcanzar la meta lo más rápido posible.",
+  "version": "1.0.0",
+  "status": "draft",
+  "enabled": true,
+  "entry": "screens",
+  "minPlayers": 1,
+  "maxPlayers": 6,
+  "tags": ["rapido", "casual", "reflejos"]
+}
