@@ -1,7 +1,8 @@
 import React from "react"
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { SwRegister } from '@/components/pwa/sw-register'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -11,6 +12,12 @@ export const metadata: Metadata = {
   title: 'Pasala - Juegos de Fiesta',
   description: 'Juegos rápidos para jugar en grupo con un solo celular',
   generator: 'v0.app',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Pasala',
+  },
   icons: {
     icon: [
       {
@@ -30,6 +37,11 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport: Viewport = {
+  themeColor: '#2fbf8f',
+  viewportFit: 'cover',
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,6 +52,7 @@ export default function RootLayout({
       <body className={`font-sans antialiased`}>
         {children}
         <Analytics />
+        <SwRegister />
       </body>
     </html>
   )
