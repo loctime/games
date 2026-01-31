@@ -1,6 +1,8 @@
 "use client"
 
 import { createContext, useContext, useState, type ReactNode } from "react"
+import type { PreguntadosQuestion } from "../src/lib/preguntados/types"
+import { selectQuestions } from "../src/lib/preguntados/selectQuestions"
 
 export type Screen =
   | "home"
@@ -25,6 +27,13 @@ interface Question {
   category: Category
 }
 
+interface PreguntadosGameState {
+  preguntadosQuestions: PreguntadosQuestion[]
+  preguntadosCurrentQuestionIndex: number
+  preguntadosScore: number
+  preguntadosSelectedAnswer: number | null
+}
+
 interface GameState {
   currentScreen: Screen
   // Heads Up state
@@ -43,7 +52,7 @@ interface GameState {
   // Preguntados state
   preguntadosCategory: Category
   preguntadosQuestionsCount: number
-  preguntadosQuestions: Question[]
+  preguntadosQuestions: PreguntadosQuestion[]
   preguntadosCurrentQuestionIndex: number
   preguntadosScore: number
   preguntadosSelectedAnswer: number | null
@@ -93,136 +102,6 @@ const wordsByCategory: Record<Category, string[]> = {
   ],
 }
 
-const questionsByCategory: Record<Category, Question[]> = {
-  personas: [
-    {
-      question: "¿Quién fue el Papa argentino?",
-      options: ["Francisco", "Juan Pablo II", "Benedicto XVI", "Pablo VI"],
-      correctIndex: 0,
-      category: "personas"
-    },
-    {
-      question: "¿Qué futbolista argentino es conocido como 'La Pulga'?",
-      options: ["Maradona", "Messi", "Di María", "Aguero"],
-      correctIndex: 1,
-      category: "personas"
-    },
-    {
-      question: "¿Quién pintó 'Las Meninas'?",
-      options: ["Picasso", "Dalí", "Velázquez", "Goya"],
-      correctIndex: 2,
-      category: "personas"
-    },
-    {
-      question: "¿Qué científico desarrolló la teoría de la relatividad?",
-      options: ["Newton", "Einstein", "Galileo", "Tesla"],
-      correctIndex: 1,
-      category: "personas"
-    },
-    {
-      question: "¿Quién fue la primera mujer en ganar un Premio Nobel?",
-      options: ["Marie Curie", "Rosa Parks", "Frida Kahlo", "Ada Lovelace"],
-      correctIndex: 0,
-      category: "personas"
-    }
-  ],
-  objetos: [
-    {
-      question: "¿Qué objeto se usa para comunicarse a distancia?",
-      options: ["Teléfono", "Televisor", "Radio", "Computadora"],
-      correctIndex: 0,
-      category: "objetos"
-    },
-    {
-      question: "¿En qué electrodoméstico se guarda la comida fría?",
-      options: ["Horno", "Microondas", "Heladera", "Lavarropas"],
-      correctIndex: 2,
-      category: "objetos"
-    },
-    {
-      question: "¿Qué objeto musical tiene 6 cuerdas?",
-      options: ["Violín", "Guitarra", "Piano", "Batería"],
-      correctIndex: 1,
-      category: "objetos"
-    },
-    {
-      question: "¿Qué se usa para tomar fotos?",
-      options: ["Binoculares", "Cámara", "Telescopio", "Lupa"],
-      correctIndex: 1,
-      category: "objetos"
-    },
-    {
-      question: "¿Qué objeto indica la hora?",
-      options: ["Brújula", "Termómetro", "Reloj", "Barómetro"],
-      correctIndex: 2,
-      category: "objetos"
-    }
-  ],
-  animales: [
-    {
-      question: "¿Qué animal es el más grande del mundo?",
-      options: ["Elefante", "Ballena azul", "Jirafa", "Tiburón blanco"],
-      correctIndex: 1,
-      category: "animales"
-    },
-    {
-      question: "¿Qué animal vive en el desierto y tiene joroba?",
-      options: ["Camello", "Caballo", "Vaca", "Cebra"],
-      correctIndex: 0,
-      category: "animales"
-    },
-    {
-      question: "¿Qué ave no puede volar?",
-      options: ["Águila", "Pingüino", "Colibrí", "Búho"],
-      correctIndex: 1,
-      category: "animales"
-    },
-    {
-      question: "¿Qué animal cambia de color?",
-      options: ["Serpiente", "Lagartija", "Camaleón", "Iguana"],
-      correctIndex: 2,
-      category: "animales"
-    },
-    {
-      question: "¿Qué animal vive en Australia y salta?",
-      options: ["Canguro", "Koala", "Canguro", "Wombat"],
-      correctIndex: 0,
-      category: "animales"
-    }
-  ],
-  libre: [
-    {
-      question: "¿Cuántos días tiene un año bisiesto?",
-      options: ["364", "365", "366", "367"],
-      correctIndex: 2,
-      category: "libre"
-    },
-    {
-      question: "¿En qué continente está Egipto?",
-      options: ["Asia", "Europa", "África", "América"],
-      correctIndex: 2,
-      category: "libre"
-    },
-    {
-      question: "¿Cuál es el planeta más grande del sistema solar?",
-      options: ["Tierra", "Marte", "Júpiter", "Saturno"],
-      correctIndex: 2,
-      category: "libre"
-    },
-    {
-      question: "¿Qué deporte se juega con una pelota naranja?",
-      options: ["Fútbol", "Tenis", "Básquetbol", "Golf"],
-      correctIndex: 2,
-      category: "libre"
-    },
-    {
-      question: "¿En qué mes comienza el verano en el hemisferio sur?",
-      options: ["Septiembre", "Diciembre", "Marzo", "Junio"],
-      correctIndex: 1,
-      category: "libre"
-    }
-  ]
-}
 
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
@@ -366,9 +245,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }
 
   const startPreguntadosGame = () => {
-    const questions = [...questionsByCategory[state.preguntadosCategory]]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, state.preguntadosQuestionsCount)
+    const questions = selectQuestions({
+      category: state.preguntadosCategory,
+      count: state.preguntadosQuestionsCount
+    })
     setState((prev) => ({
       ...prev,
       preguntadosQuestions: questions,
