@@ -5,6 +5,7 @@ import { personasHardQuestions } from "./personas.hard"
 import { objetosEasyQuestions } from "./objetos.easy"
 import { animalesEasyQuestions } from "./animales.easy"
 import { libreEasyQuestions } from "./libre.easy"
+import { preguntasPolémicasQuestions } from "./polemicas"
 
 export const allPreguntadosQuestions: PreguntadosQuestion[] = [
   ...personasEasyQuestions,
@@ -12,7 +13,8 @@ export const allPreguntadosQuestions: PreguntadosQuestion[] = [
   ...personasHardQuestions,
   ...objetosEasyQuestions,
   ...animalesEasyQuestions,
-  ...libreEasyQuestions
+  ...libreEasyQuestions,
+  ...preguntasPolémicasQuestions
 ]
 
 export {
@@ -21,5 +23,6 @@ export {
   personasHardQuestions,
   objetosEasyQuestions,
   animalesEasyQuestions,
-  libreEasyQuestions
+  libreEasyQuestions,
+  preguntasPolémicasQuestions
 }
