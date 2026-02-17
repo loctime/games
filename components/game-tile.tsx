@@ -3,10 +3,10 @@
 import { motion } from "framer-motion"
 
 interface GameTileProps {
-  icon: string
+  icon: string | React.ReactNode
   title: string
   onClick: () => void
-  variant?: "primary" | "accent"
+  variant?: "primary" | "accent" | "secondary"
 }
 
 export function GameTile({ icon, title, onClick, variant = "primary" }: GameTileProps) {
@@ -20,7 +20,9 @@ export function GameTile({ icon, title, onClick, variant = "primary" }: GameTile
         transition-all duration-200 shadow-lg active:shadow-md
         ${variant === "primary" 
           ? "bg-primary text-primary-foreground" 
-          : "bg-accent text-accent-foreground"
+          : variant === "accent"
+          ? "bg-accent text-accent-foreground"
+          : "bg-secondary text-secondary-foreground"
         }
       `}
     >

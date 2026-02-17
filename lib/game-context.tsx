@@ -1,8 +1,13 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { PreguntadosQuestion } from "../src/lib/preguntados/types"
 import { selectQuestions } from "../src/lib/preguntados/selectQuestions"
+import type { PlayerProfile, QuestionDifficulty } from "../src/lib/player/types"
+import { profileManager } from "../src/lib/player/profile-manager"
+import { powerUpManager } from "../src/lib/powerups/power-up-manager"
+import { ScoringSystem } from "../src/lib/trivia/scoring"
+import type { PowerUpType } from "../src/lib/powerups/types"
 
 export type Screen =
   | "home"
@@ -17,6 +22,7 @@ export type Screen =
   | "preguntados-setup"
   | "preguntados-play"
   | "preguntados-result"
+  | "stats"
 
 export type Category = "personas" | "objetos" | "animales" | "libre"
 
@@ -36,6 +42,9 @@ interface PreguntadosGameState {
 
 interface GameState {
   currentScreen: Screen
+  // Player profile
+  playerProfile: PlayerProfile | null
+  loadingProfile: boolean
   // Heads Up state
   headsupCategory: Category
   headsupWords: string[]
@@ -56,27 +65,42 @@ interface GameState {
   preguntadosCurrentQuestionIndex: number
   preguntadosScore: number
   preguntadosSelectedAnswer: number | null
+  // Power-ups state
+  activePowerUp: PowerUpType | null
+  fiftyFiftyOptions: number[] | null
+  questionStartTime: number
 }
 
 interface GameContextType extends GameState {
   setScreen: (screen: Screen) => void
+  // Player profile actions
+  loadProfile: () => Promise<void>
+  updateProfile: (profile: PlayerProfile) => Promise<void>
+  // Heads Up actions
   setHeadsupCategory: (category: Category) => void
   startHeadsupGame: () => void
   markCorrect: () => void
   markPassed: () => void
   resetHeadsup: () => void
+  // Impostor actions
   setImpostorCategory: (category: Category) => void
   setImpostorPlayers: (players: number) => void
   startImpostorGame: () => void
   nextPlayer: () => void
   submitVote: (playerIndex: number) => void
   resetImpostor: () => void
+  // Preguntados actions
   setPreguntadosCategory: (category: Category) => void
   setPreguntadosQuestionsCount: (count: number) => void
   startPreguntadosGame: () => void
   selectPreguntadosAnswer: (answerIndex: number) => void
   nextPreguntadosQuestion: () => void
   resetPreguntados: () => void
+  // Power-up actions
+  usePowerUp: (type: PowerUpType) => boolean
+  resetPowerUps: () => void
+  changeQuestion: () => Promise<void>
+  addExtraTime: () => void
 }
 
 const wordsByCategory: Record<Category, string[]> = {
@@ -108,6 +132,8 @@ const GameContext = createContext<GameContextType | undefined>(undefined)
 export function GameProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GameState>({
     currentScreen: "home",
+    playerProfile: null,
+    loadingProfile: true,
     headsupCategory: "animales",
     headsupWords: [],
     headsupCorrect: [],
@@ -125,10 +151,69 @@ export function GameProvider({ children }: { children: ReactNode }) {
     preguntadosCurrentQuestionIndex: 0,
     preguntadosScore: 0,
     preguntadosSelectedAnswer: null,
+    activePowerUp: null,
+    fiftyFiftyOptions: null,
+    questionStartTime: 0,
   })
 
   const setScreen = (screen: Screen) => {
     setState((prev) => ({ ...prev, currentScreen: screen }))
+  }
+
+  // Player profile functions
+  const loadProfile = async () => {
+    setState(prev => ({ ...prev, loadingProfile: true }))
+    
+    try {
+      let profile = await profileManager.getProfile()
+      
+      if (!profile) {
+        profile = await profileManager.createProfile()
+      }
+      
+      setState(prev => ({ ...prev, playerProfile: profile, loadingProfile: false }))
+    } catch (error) {
+      console.error('Error loading profile:', error)
+      setState(prev => ({ ...prev, loadingProfile: false }))
+    }
+  }
+
+  const updateProfile = async (profile: PlayerProfile) => {
+    try {
+      await profileManager.saveProfile(profile)
+      setState(prev => ({ ...prev, playerProfile: profile }))
+    } catch (error) {
+      console.error('Error updating profile:', error)
+    }
+  }
+
+  // Power-up functions
+  const usePowerUp = (type: PowerUpType): boolean => {
+    if (!state.playerProfile) return false
+    
+    if (powerUpManager.canUsePowerUp(type, state.playerProfile.powerUps)) {
+      const cost = powerUpManager.getCost(type)
+      const updatedProfile = profileManager.usePowerUp(state.playerProfile)
+      
+      if (updatedProfile.powerUps < state.playerProfile.powerUps) {
+        updateProfile(updatedProfile)
+        powerUpManager.usePowerUp(type, state.playerProfile.powerUps)
+        
+        setState(prev => ({ ...prev, activePowerUp: type }))
+        return true
+      }
+    }
+    
+    return false
+  }
+
+  const resetPowerUps = () => {
+    powerUpManager.resetGame()
+    setState(prev => ({ 
+      ...prev, 
+      activePowerUp: null, 
+      fiftyFiftyOptions: null 
+    }))
   }
 
   const setHeadsupCategory = (category: Category) => {
@@ -255,6 +340,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       preguntadosCurrentQuestionIndex: 0,
       preguntadosScore: 0,
       preguntadosSelectedAnswer: null,
+      questionStartTime: Date.now(),
       currentScreen: "preguntados-play",
     }))
   }
@@ -263,30 +349,113 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, preguntadosSelectedAnswer: answerIndex }))
   }
 
-  const nextPreguntadosQuestion = () => {
+  const nextPreguntadosQuestion = async () => {
+    if (!state.playerProfile) return
+    
+    const currentQuestion = state.preguntadosQuestions[state.preguntadosCurrentQuestionIndex]
+    const isCorrect = state.preguntadosSelectedAnswer === currentQuestion?.correctIndex
+    
+    if (currentQuestion) {
+      const timeTaken = (Date.now() - state.questionStartTime) / 1000
+      const scoreCalculation = ScoringSystem.calculateScore(
+        isCorrect,
+        timeTaken,
+        30, // 30 segundos por pregunta
+        state.playerProfile.streak.current,
+        currentQuestion.difficulty,
+        currentQuestion.category,
+        state.preguntadosQuestions.length,
+        state.preguntadosScore
+      )
+      
+      let updatedProfile = profileManager.addXP(state.playerProfile, scoreCalculation.totalXP)
+      updatedProfile = profileManager.updateStreak(updatedProfile, isCorrect, currentQuestion.category)
+      updatedProfile = profileManager.updateCategoryStats(updatedProfile, currentQuestion.category, isCorrect, timeTaken)
+      
+      // Check for crown award
+      if (isCorrect) {
+        updatedProfile = profileManager.checkAndAwardCrown(
+          updatedProfile, 
+          currentQuestion.category, 
+          updatedProfile.categoryStats[currentQuestion.category].currentStreak
+        )
+        
+        // Check for category unlock
+        const totalCrowns = profileManager.getTotalCrowns(updatedProfile)
+        if (totalCrowns >= 3 && !updatedProfile.categories.unlocked.includes('objetos')) {
+          updatedProfile = profileManager.unlockCategory(updatedProfile, 'objetos')
+        }
+        if (totalCrowns >= 5 && !updatedProfile.categories.unlocked.includes('animales')) {
+          updatedProfile = profileManager.unlockCategory(updatedProfile, 'animales')
+        }
+        if (totalCrowns >= 8 && !updatedProfile.categories.unlocked.includes('libre')) {
+          updatedProfile = profileManager.unlockCategory(updatedProfile, 'libre')
+        }
+      }
+      
+      if (isCorrect) {
+        updatedProfile.questionsAnswered += 1
+        updatedProfile.correctAnswers += 1
+      } else {
+        updatedProfile.questionsAnswered += 1
+      }
+      
+      await updateProfile(updatedProfile)
+    }
+    
     setState((prev) => {
-      const isCorrect = prev.preguntadosSelectedAnswer === prev.preguntadosQuestions[prev.preguntadosCurrentQuestionIndex].correctIndex
-      const newScore = isCorrect ? prev.preguntadosScore + 1 : prev.preguntadosScore
       const nextIndex = prev.preguntadosCurrentQuestionIndex + 1
       
       if (nextIndex >= prev.preguntadosQuestions.length) {
         return {
           ...prev,
-          preguntadosScore: newScore,
           currentScreen: "preguntados-result",
         }
       }
       
       return {
         ...prev,
-        preguntadosScore: newScore,
         preguntadosCurrentQuestionIndex: nextIndex,
         preguntadosSelectedAnswer: null,
+        questionStartTime: Date.now(),
+        activePowerUp: null,
+        fiftyFiftyOptions: null,
       }
     })
   }
 
+  const changeQuestion = async () => {
+    if (!state.playerProfile) return
+    
+    // Get new question from same category
+    const newQuestions = selectQuestions({
+      category: state.preguntadosCategory,
+      count: 1
+    })
+    
+    if (newQuestions.length > 0) {
+      setState((prev) => ({
+        ...prev,
+        preguntadosQuestions: [
+          ...prev.preguntadosQuestions.slice(0, prev.preguntadosCurrentQuestionIndex),
+          newQuestions[0],
+          ...prev.preguntadosQuestions.slice(prev.preguntadosCurrentQuestionIndex + 1)
+        ],
+        preguntadosSelectedAnswer: null,
+        questionStartTime: Date.now(),
+        activePowerUp: null,
+        fiftyFiftyOptions: null,
+      }))
+    }
+  }
+
+  const addExtraTime = () => {
+    // This will be handled in the component with local state
+    console.log('Extra time added')
+  }
+
   const resetPreguntados = () => {
+    resetPowerUps()
     setState((prev) => ({
       ...prev,
       preguntadosQuestions: [],
@@ -296,11 +465,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }))
   }
 
+  // Load profile on mount
+  useEffect(() => {
+    loadProfile()
+  }, [])
+
   return (
     <GameContext.Provider
       value={{
         ...state,
         setScreen,
+        loadProfile,
+        updateProfile,
         setHeadsupCategory,
         startHeadsupGame,
         markCorrect,
@@ -318,6 +494,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         selectPreguntadosAnswer,
         nextPreguntadosQuestion,
         resetPreguntados,
+        usePowerUp,
+        resetPowerUps,
+        changeQuestion,
+        addExtraTime,
       }}
     >
       {children}

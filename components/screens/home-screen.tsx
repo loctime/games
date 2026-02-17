@@ -1,11 +1,13 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { BarChart3 } from "lucide-react"
 import { GameTile } from "@/components/game-tile"
+import { PlayerProfile } from "@/components/player-profile"
 import { useGame } from "@/lib/game-context"
 
 export function HomeScreen() {
-  const { setScreen } = useGame()
+  const { setScreen, loadingProfile } = useGame()
 
   return (
     <div className="min-h-screen bg-background flex flex-col p-6">
@@ -21,6 +23,18 @@ export function HomeScreen() {
           Juegos rápidos para jugar en grupo con un solo celular
         </p>
       </motion.div>
+
+      {/* Player Profile */}
+      {!loadingProfile && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <PlayerProfile />
+        </motion.div>
+      )}
 
       <div className="flex-1 flex flex-col gap-5 justify-center max-w-sm mx-auto w-full">
         <motion.div
@@ -61,12 +75,25 @@ export function HomeScreen() {
             onClick={() => setScreen("preguntados-setup")}
           />
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <GameTile
+            icon={<BarChart3 className="w-6 h-6" />}
+            title="Estadísticas"
+            variant="secondary"
+            onClick={() => setScreen("stats")}
+          />
+        </motion.div>
       </div>
 
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
+        transition={{ delay: 0.5 }}
         className="text-center text-muted-foreground text-sm pb-6"
       >
         Toca un juego para comenzar

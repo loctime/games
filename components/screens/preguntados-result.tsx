@@ -1,29 +1,41 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { Trophy, Star, Zap, TrendingUp } from "lucide-react"
 import { GameButton } from "@/components/game-button"
+import { PlayerProfile } from "@/components/player-profile"
 import { useGame } from "@/lib/game-context"
 
 export function PreguntadosResult() {
-  const { preguntadosScore, preguntadosQuestions, setScreen, startPreguntadosGame } = useGame()
+  const { preguntadosScore, preguntadosQuestions, setScreen, startPreguntadosGame, playerProfile } = useGame()
 
   const percentage = Math.round((preguntadosScore / preguntadosQuestions.length) * 100)
   
   let message = ""
   let emoji = ""
+  let xpGained = 0
   
   if (percentage >= 80) {
     message = "¡Excelente!"
     emoji = "🏆"
+    xpGained = preguntadosScore * 150 // 1.5x bonus para excelentes
   } else if (percentage >= 60) {
     message = "¡Muy bien!"
     emoji = "🎉"
+    xpGained = preguntadosScore * 120 // 1.2x bonus para muy bien
   } else if (percentage >= 40) {
     message = "¡Bien hecho!"
     emoji = "👍"
+    xpGained = preguntadosScore * 100 // XP normal
   } else {
     message = "¡Sigue intentando!"
     emoji = "💪"
+    xpGained = preguntadosScore * 80 // 0.8x para mejorar
+  }
+
+  // Bonus por juego perfecto
+  if (percentage === 100) {
+    xpGained += 50
   }
 
   return (
@@ -41,6 +53,39 @@ export function PreguntadosResult() {
           Resultados de Preguntados
         </p>
       </motion.div>
+
+      {/* XP Gained Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-4 border border-primary/20 mb-6"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Zap className="w-5 h-5 text-warning" />
+            <span className="font-semibold text-foreground">XP Ganado</span>
+          </div>
+          <div className="text-right">
+            <p className="font-bold text-2xl text-warning">+{xpGained}</p>
+            {percentage === 100 && (
+              <p className="text-xs text-success">¡Perfecto! +50 bonus</p>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Updated Profile */}
+      {playerProfile && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-6"
+        >
+          <PlayerProfile />
+        </motion.div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

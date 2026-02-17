@@ -1,10 +1,12 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Lock, Crown } from "lucide-react"
 import { CategorySelector } from "@/components/category-selector"
 import { GameButton } from "@/components/game-button"
+import { PlayerProfile } from "@/components/player-profile"
 import { useGame } from "@/lib/game-context"
+import type { Category } from "@/lib/game-context"
 
 export function PreguntadosSetup() {
   const { 
@@ -13,10 +15,26 @@ export function PreguntadosSetup() {
     setPreguntadosCategory,
     preguntadosQuestionsCount,
     setPreguntadosQuestionsCount,
-    startPreguntadosGame 
+    startPreguntadosGame,
+    playerProfile 
   } = useGame()
 
   const questionsOptions = [5, 10, 15]
+
+  const isCategoryUnlocked = (category: Category) => {
+    if (!playerProfile) return category === "personas"
+    return playerProfile.categories.unlocked.includes(category)
+  }
+
+  const getCategoryRequiredCrowns = (category: Category) => {
+    if (!playerProfile) return 0
+    return playerProfile.categories.requiredCrowns[category]
+  }
+
+  const getTotalCrowns = () => {
+    if (!playerProfile) return 0
+    return Object.values(playerProfile.categories.crowns).reduce((sum, crowns) => sum + crowns, 0)
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col p-6">
@@ -29,6 +47,36 @@ export function PreguntadosSetup() {
         <ArrowLeft className="w-5 h-5" />
         <span>Volver</span>
       </motion.button>
+
+      {/* Player Profile */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6"
+      >
+        <PlayerProfile />
+      </motion.div>
+
+      {/* Crown Status */}
+      {playerProfile && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-2xl p-4 border border-yellow-500/20 mb-6"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-yellow-500" />
+              <span className="font-semibold text-foreground">Coronas</span>
+            </div>
+            <div className="text-right">
+              <p className="font-bold text-yellow-500">{getTotalCrowns()}</p>
+              <p className="text-xs text-muted-foreground">Total</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -57,6 +105,7 @@ export function PreguntadosSetup() {
           <CategorySelector
             selected={preguntadosCategory}
             onSelect={setPreguntadosCategory}
+            showLocked={true}
           />
         </div>
 

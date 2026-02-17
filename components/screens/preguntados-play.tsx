@@ -1,8 +1,13 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
+import { Clock, Trophy, Zap } from "lucide-react"
 import { GameButton } from "@/components/game-button"
+import { PowerUpButton } from "@/components/power-up-button"
 import { useGame } from "@/lib/game-context"
+import { powerUpManager } from "@/src/lib/powerups/power-up-manager"
+import type { PowerUpType } from "@/src/lib/powerups/types"
 
 export function PreguntadosPlay() {
   const {
@@ -11,28 +16,119 @@ export function PreguntadosPlay() {
     preguntadosSelectedAnswer,
     selectPreguntadosAnswer,
     nextPreguntadosQuestion,
+    playerProfile,
+    activePowerUp,
+    fiftyFiftyOptions,
+    questionStartTime,
+    usePowerUp,
+    changeQuestion,
+    addExtraTime,
   } = useGame()
 
+  const [timeLeft, setTimeLeft] = useState(30)
   const currentQuestion = preguntadosQuestions[preguntadosCurrentQuestionIndex]
   const isAnswered = preguntadosSelectedAnswer !== null
   const isCorrect = preguntadosSelectedAnswer === currentQuestion?.correctIndex
+
+  // Timer effect
+  useEffect(() => {
+    if (timeLeft <= 0 || isAnswered) {
+      if (!isAnswered) {
+        selectPreguntadosAnswer(-1) // Auto-select wrong answer
+      }
+      return
+    }
+
+    const timer = setTimeout(() => {
+      setTimeLeft((prev: number) => prev - 1)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [timeLeft, isAnswered, selectPreguntadosAnswer])
+
+  // Reset timer on new question
+  useEffect(() => {
+    setTimeLeft(30)
+  }, [preguntadosCurrentQuestionIndex])
+
+  const handlePowerUpUse = async (type: PowerUpType) => {
+    if (type === "fifty_fifty" && currentQuestion) {
+      const visibleOptions = powerUpManager.applyFiftyFifty(
+        currentQuestion.options,
+        currentQuestion.correctIndex
+      )
+      // Store visible options in state
+    } else if (type === "change_question") {
+      await changeQuestion()
+    } else if (type === "extra_time") {
+      setTimeLeft(prev => prev + 15)
+    }
+  }
+
+  const getVisibleOptions = () => {
+    if (activePowerUp === "fifty_fifty" && fiftyFiftyOptions) {
+      return fiftyFiftyOptions.map(index => ({
+        index,
+        option: currentQuestion!.options[index],
+        isCorrect: index === currentQuestion!.correctIndex
+      }))
+    }
+    
+    return currentQuestion?.options.map((option, index) => ({
+      index,
+      option,
+      isCorrect: index === currentQuestion!.correctIndex
+    })) || []
+  }
 
   if (!currentQuestion) return null
 
   return (
     <div className="min-h-screen bg-background flex flex-col p-6">
+      {/* Header with timer and power-ups */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center py-8"
+        className="text-center py-4"
       >
-        <span className="text-5xl mb-4 block">❓</span>
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          Preguntados
-        </h1>
-        <p className="text-muted-foreground">
-          Pregunta {preguntadosCurrentQuestionIndex + 1} de {preguntadosQuestions.length}
-        </p>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-3xl">❓</span>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Preguntados</h1>
+              <p className="text-sm text-muted-foreground">
+                Pregunta {preguntadosCurrentQuestionIndex + 1} de {preguntadosQuestions.length}
+              </p>
+            </div>
+          </div>
+          
+          {/* Timer */}
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-full ${
+            timeLeft <= 10 ? "bg-destructive/20 text-destructive" : "bg-secondary text-secondary-foreground"
+          }`}>
+            <Clock className="w-4 h-4" />
+            <span className="font-bold">{timeLeft}s</span>
+          </div>
+        </div>
+
+        {/* Power-ups */}
+        <div className="flex justify-center gap-2">
+          <PowerUpButton 
+            type="fifty_fifty" 
+            disabled={isAnswered}
+            onUse={() => handlePowerUpUse("fifty_fifty")}
+          />
+          <PowerUpButton 
+            type="change_question" 
+            disabled={isAnswered}
+            onUse={() => handlePowerUpUse("change_question")}
+          />
+          <PowerUpButton 
+            type="extra_time" 
+            disabled={isAnswered}
+            onUse={() => handlePowerUpUse("extra_time")}
+          />
+        </div>
       </motion.div>
 
       <motion.div

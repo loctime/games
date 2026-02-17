@@ -13,6 +13,7 @@ import { ImpostorResult } from "@/components/screens/impostor-result"
 import { PreguntadosSetup } from "@/components/screens/preguntados-setup"
 import { PreguntadosPlay } from "@/components/screens/preguntados-play"
 import { PreguntadosResult } from "@/components/screens/preguntados-result"
+import { StatsScreen } from "@/components/screens/stats-screen"
 
 function GameScreens() {
   const { currentScreen } = useGame()
@@ -42,6 +43,8 @@ function GameScreens() {
       return <PreguntadosPlay />
     case "preguntados-result":
       return <PreguntadosResult />
+    case "stats":
+      return <StatsScreen />
     default:
       return <HomeScreen />
   }
