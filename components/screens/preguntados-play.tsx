@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Clock, Trophy, Zap } from "lucide-react"
+import { Clock, Trophy, Zap, BarChart3 } from "lucide-react"
 import { GameButton } from "@/components/game-button"
 import { PowerUpButton } from "@/components/power-up-button"
 import { useGame } from "@/lib/game-context"
@@ -23,6 +23,7 @@ export function PreguntadosPlay() {
     usePowerUp,
     changeQuestion,
     addExtraTime,
+    setScreen,
   } = useGame()
 
   const [timeLeft, setTimeLeft] = useState(30)
@@ -102,12 +103,23 @@ export function PreguntadosPlay() {
             </div>
           </div>
           
-          {/* Timer */}
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-full ${
-            timeLeft <= 10 ? "bg-destructive/20 text-destructive" : "bg-secondary text-secondary-foreground"
-          }`}>
-            <Clock className="w-4 h-4" />
-            <span className="font-bold">{timeLeft}s</span>
+          <div className="flex items-center gap-2">
+            {/* Stats Button */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setScreen("stats")}
+              className="p-2 rounded-lg bg-secondary/50 text-secondary-foreground hover:bg-secondary/70"
+            >
+              <BarChart3 className="w-4 h-4" />
+            </motion.button>
+            
+            {/* Timer */}
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-full ${
+              timeLeft <= 10 ? "bg-destructive/20 text-destructive" : "bg-secondary text-secondary-foreground"
+            }`}>
+              <Clock className="w-4 h-4" />
+              <span className="font-bold">{timeLeft}s</span>
+            </div>
           </div>
         </div>
 

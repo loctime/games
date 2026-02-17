@@ -1,7 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import { motion } from "framer-motion"
-import { ArrowLeft, Lock, Crown } from "lucide-react"
+import { ArrowLeft, Lock, Crown, Zap } from "lucide-react"
 import { CategorySelector } from "@/components/category-selector"
 import { GameButton } from "@/components/game-button"
 import { PlayerProfile } from "@/components/player-profile"
@@ -16,10 +17,12 @@ export function PreguntadosSetup() {
     preguntadosQuestionsCount,
     setPreguntadosQuestionsCount,
     startPreguntadosGame,
-    playerProfile 
+    playerProfile,
+    updateProfile
   } = useGame()
 
   const questionsOptions = [5, 10, 15]
+  const [selectedDifficulty, setSelectedDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy')
 
   const isCategoryUnlocked = (category: Category) => {
     if (!playerProfile) return category === "personas"
@@ -34,6 +37,33 @@ export function PreguntadosSetup() {
   const getTotalCrowns = () => {
     if (!playerProfile) return 0
     return Object.values(playerProfile.categories.crowns).reduce((sum, crowns) => sum + crowns, 0)
+  }
+
+  const handleStartGame = () => {
+    if (playerProfile) {
+      const updatedProfile = {
+        ...playerProfile,
+        difficulty: selectedDifficulty
+      }
+      updateProfile(updatedProfile)
+    }
+    startPreguntadosGame()
+  }
+
+  const getDifficultyColor = (diff: 'easy' | 'medium' | 'hard') => {
+    switch(diff) {
+      case 'easy': return 'text-green-500'
+      case 'medium': return 'text-yellow-500'
+      case 'hard': return 'text-red-500'
+    }
+  }
+
+  const getDifficultyLabel = (diff: 'easy' | 'medium' | 'hard') => {
+    switch(diff) {
+      case 'easy': return 'Fácil'
+      case 'medium': return 'Normal'
+      case 'hard': return 'Difícil'
+    }
   }
 
   return (
@@ -57,12 +87,33 @@ export function PreguntadosSetup() {
         <PlayerProfile />
       </motion.div>
 
-      {/* Crown Status */}
+      {/* Power-ups Indicator */}
       {playerProfile && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="bg-gradient-to-r from-warning/10 to-orange-500/10 rounded-2xl p-4 border border-warning/20 mb-6"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-warning" />
+              <span className="font-semibold text-foreground">Power-ups disponibles</span>
+            </div>
+            <div className="text-right">
+              <p className="font-bold text-2xl text-warning">{playerProfile.powerUps}</p>
+              <p className="text-xs text-muted-foreground">Usa sabiamente</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Crown Status */}
+      {playerProfile && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
           className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-2xl p-4 border border-yellow-500/20 mb-6"
         >
           <div className="flex items-center justify-between">
@@ -71,12 +122,48 @@ export function PreguntadosSetup() {
               <span className="font-semibold text-foreground">Coronas</span>
             </div>
             <div className="text-right">
-              <p className="font-bold text-yellow-500">{getTotalCrowns()}</p>
+              <p className="font-bold text-2xl text-yellow-500">{getTotalCrowns()}</p>
               <p className="text-xs text-muted-foreground">Total</p>
             </div>
           </div>
         </motion.div>
       )}
+
+      {/* Difficulty Selector */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="mb-6"
+      >
+        <h2 className="text-lg font-semibold text-foreground mb-3">
+          Dificultad
+        </h2>
+        <div className="grid grid-cols-3 gap-3">
+          {(['easy', 'medium', 'hard'] as const).map((diff) => (
+            <motion.button
+              key={diff}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSelectedDifficulty(diff)}
+              className={`
+                p-4 rounded-xl font-bold transition-all duration-200
+                ${selectedDifficulty === diff
+                  ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg"
+                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                }
+              `}
+            >
+              <div className={`text-2xl mb-1 ${getDifficultyColor(diff)}`}>
+                {diff === 'easy' ? '😊' : diff === 'medium' ? '😐' : '😰'}
+              </div>
+              <div>{getDifficultyLabel(diff)}</div>
+              <div className="text-xs text-muted-foreground">
+                {diff === 'easy' ? '100 XP' : diff === 'medium' ? '150 XP' : '200 XP'}
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -140,8 +227,8 @@ export function PreguntadosSetup() {
         transition={{ delay: 0.2 }}
         className="pt-6 pb-4"
       >
-        <GameButton onClick={startPreguntadosGame} fullWidth size="lg">
-          Empezar
+        <GameButton onClick={handleStartGame} fullWidth={true}>
+          Empezar ({getDifficultyLabel(selectedDifficulty)})
         </GameButton>
       </motion.div>
     </div>
