@@ -1,7 +1,7 @@
 {
-  "name": "Pasala - Juegos de Fiesta",
-  "short_name": "Pasala",
-  "description": "Juegos rápidos para jugar en grupo con un solo celular",
+  "name": "ControlGames",
+  "short_name": "ControlGames",
+  "description": "Tu plataforma de juegos",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#13131f",

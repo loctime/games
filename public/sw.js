@@ -1,7 +1,9 @@
+const CACHE_NAME = "controlgames-shell-v2"
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
-      .open("pasala-shell-v1")
+      .open(CACHE_NAME)
       .then((cache) =>
         cache.addAll([
           "/",
@@ -23,12 +25,16 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key !== "pasala-shell-v1")
+            .filter((key) => key !== CACHE_NAME)
             .map((key) => caches.delete(key))
         )
       )
       .then(() => self.clients.claim())
   )
+})
+
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") self.skipWaiting()
 })
 
 self.addEventListener("fetch", (event) => {
@@ -57,7 +63,7 @@ self.addEventListener("fetch", (event) => {
         .then((response) => {
           if (!response || response.status !== 200) return response
           const copy = response.clone()
-          caches.open("pasala-shell-v1").then((cache) => cache.put(request, copy))
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
           return response
         })
         .catch(() => cached)

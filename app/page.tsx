@@ -2,6 +2,7 @@
 
 import { GameProvider, useGame } from "@/lib/game-context"
 import { HomeScreen } from "@/components/screens/home-screen"
+import { AuthScreen } from "@/components/screens/auth-screen"
 import { HeadsupSetup } from "@/components/screens/headsup-setup"
 import { HeadsupPlay } from "@/components/screens/headsup-play"
 import { HeadsupResult } from "@/components/screens/headsup-result"
@@ -14,6 +15,7 @@ import { PreguntadosSetup } from "@/components/screens/preguntados-setup"
 import { PreguntadosPlay } from "@/components/screens/preguntados-play"
 import { PreguntadosResult } from "@/components/screens/preguntados-result"
 import { StatsScreen } from "@/components/screens/stats-screen"
+import { IframeScreen } from "@/components/screens/iframe-screen"
 
 function GameScreens() {
   const { currentScreen } = useGame()
@@ -21,6 +23,8 @@ function GameScreens() {
   switch (currentScreen) {
     case "home":
       return <HomeScreen />
+    case "auth":
+      return <AuthScreen />
     case "headsup-setup":
       return <HeadsupSetup />
     case "headsup-play":
@@ -45,6 +49,11 @@ function GameScreens() {
       return <PreguntadosResult />
     case "stats":
       return <StatsScreen />
+    case "iframe-rompecabeza":
+    case "iframe-afkrpg":
+    case "iframe-soulpet":
+    case "iframe-arrowz":
+      return <IframeScreen />
     default:
       return <HomeScreen />
   }

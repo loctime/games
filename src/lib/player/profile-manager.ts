@@ -1,6 +1,6 @@
 import type { PlayerProfile, PlayerLevel, Category, QuestionDifficulty, CategoryStats } from './types'
 
-const DB_NAME = 'PasalaTriviaDB'
+const DB_NAME = 'ControlGamesDB'
 const DB_VERSION = 1
 const STORE_NAME = 'playerProfile'
 

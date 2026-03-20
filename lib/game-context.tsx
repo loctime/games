@@ -11,6 +11,7 @@ import type { PowerUpType } from "../src/lib/powerups/types"
 
 export type Screen =
   | "home"
+  | "auth"
   | "headsup-setup"
   | "headsup-play"
   | "headsup-result"
@@ -23,6 +24,10 @@ export type Screen =
   | "preguntados-play"
   | "preguntados-result"
   | "stats"
+  | "iframe-rompecabeza"
+  | "iframe-afkrpg"
+  | "iframe-soulpet"
+  | "iframe-arrowz"
 
 export type Category = "personas" | "objetos" | "animales" | "libre"
 
@@ -42,6 +47,7 @@ interface PreguntadosGameState {
 
 interface GameState {
   currentScreen: Screen
+  currentIframeGame: string | null
   // Player profile
   playerProfile: PlayerProfile | null
   loadingProfile: boolean
@@ -73,6 +79,7 @@ interface GameState {
 
 interface GameContextType extends GameState {
   setScreen: (screen: Screen) => void
+  launchIframeGame: (gameId: string) => void
   // Player profile actions
   loadProfile: () => Promise<void>
   updateProfile: (profile: PlayerProfile) => Promise<void>
@@ -132,6 +139,7 @@ const GameContext = createContext<GameContextType | undefined>(undefined)
 export function GameProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GameState>({
     currentScreen: "home",
+    currentIframeGame: null,
     playerProfile: null,
     loadingProfile: true,
     headsupCategory: "animales",
@@ -158,6 +166,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const setScreen = (screen: Screen) => {
     setState((prev) => ({ ...prev, currentScreen: screen }))
+  }
+
+  const launchIframeGame = (gameId: string) => {
+    setState((prev) => ({
+      ...prev,
+      currentIframeGame: gameId,
+      currentScreen: `iframe-${gameId}` as Screen,
+    }))
   }
 
   // Player profile functions
@@ -475,6 +491,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       value={{
         ...state,
         setScreen,
+        launchIframeGame,
         loadProfile,
         updateProfile,
         setHeadsupCategory,

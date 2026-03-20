@@ -3,20 +3,21 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SwRegister } from '@/components/pwa/sw-register'
+import { AuthProvider } from '@/lib/auth-context'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Pasala - Juegos de Fiesta',
-  description: 'Juegos rápidos para jugar en grupo con un solo celular',
+  title: 'ControlGames',
+  description: 'Tu plataforma de juegos',
   generator: 'v0.app',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Pasala',
+    title: 'ControlGames',
   },
   icons: {
     icon: [
@@ -50,7 +51,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`font-sans antialiased`}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Analytics />
         <SwRegister />
       </body>
