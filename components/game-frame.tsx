@@ -41,6 +41,22 @@ export function GameFrame({ gameId }: GameFrameProps) {
     return () => window.removeEventListener("message", handleMessage)
   }, [handleMessage])
 
+  const handleIframeLoad = useCallback(async () => {
+    setLoading(false)
+    // SSO: send Firebase ID token to Rompecoco (same Firebase project)
+    if (gameId === "rompecabeza" && user && iframeRef.current?.contentWindow && game?.url) {
+      try {
+        const idToken = await user.getIdToken()
+        iframeRef.current.contentWindow.postMessage(
+          { type: "CONTROLGAMES_AUTH", idToken, uid: user.uid },
+          game.url
+        )
+      } catch {
+        // Token fetch failed silently — user stays as guest in Rompecoco
+      }
+    }
+  }, [gameId, user, game?.url])
+
   if (!game?.url) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
@@ -90,7 +106,7 @@ export function GameFrame({ gameId }: GameFrameProps) {
         className="flex-1 w-full border-0"
         title={game.title}
         allow="autoplay; fullscreen"
-        onLoad={() => setLoading(false)}
+        onLoad={handleIframeLoad}
       />
     </div>
   )
