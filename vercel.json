@@ -9,7 +9,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "frame-src https://rompecoco.vercel.app https://juegueteclaude.vercel.app https://soulpet.vercel.app https://arrowz.vercel.app;"
+          "value": "frame-src https://arrows-chi.vercel.app https://soul-pet-game.vercel.app https://afk-game.vercel.app https://rompecabeza.controldoc.app https://vercel.live;"
         },
         {
           "key": "X-Content-Type-Options",
