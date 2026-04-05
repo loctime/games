@@ -5,6 +5,8 @@ import type { PreguntadosQuestion } from "../src/lib/preguntados/types"
 import { selectQuestions } from "../src/lib/preguntados/selectQuestions"
 import type { PlayerProfile, QuestionDifficulty } from "../src/lib/player/types"
 import { profileManager } from "../src/lib/player/profile-manager"
+import { getOrCreatePlayer } from "@/lib/firestore-service"
+import { useAuth } from "@/lib/auth-context"
 import { powerUpManager } from "../src/lib/powerups/power-up-manager"
 import { ScoringSystem } from "../src/lib/trivia/scoring"
 import type { PowerUpType } from "../src/lib/powerups/types"
@@ -137,6 +139,7 @@ const wordsByCategory: Record<Category, string[]> = {
 const GameContext = createContext<GameContextType | undefined>(undefined)
 
 export function GameProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
   const [state, setState] = useState<GameState>({
     currentScreen: "home",
     currentIframeGame: null,
@@ -179,15 +182,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
   // Player profile functions
   const loadProfile = async () => {
     setState(prev => ({ ...prev, loadingProfile: true }))
-    
+
+    if (!user) {
+      setState(prev => ({ ...prev, playerProfile: null, loadingProfile: false }))
+      return
+    }
+
     try {
-      let profile = await profileManager.getProfile()
-      
-      if (!profile) {
-        profile = await profileManager.createProfile()
-      }
-      
-      setState(prev => ({ ...prev, playerProfile: profile, loadingProfile: false }))
+      const profile = await getOrCreatePlayer(
+        user.uid,
+        user.displayName ?? user.email ?? "Jugador"
+      )
+      setState(prev => ({ ...prev, playerProfile: profile as unknown as PlayerProfile, loadingProfile: false }))
     } catch (error) {
       console.error('Error loading profile:', error)
       setState(prev => ({ ...prev, loadingProfile: false }))
@@ -481,10 +487,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  // Load profile on mount
+  // Load profile when auth state changes
   useEffect(() => {
     loadProfile()
-  }, [])
+  }, [user])
 
   return (
     <GameContext.Provider
