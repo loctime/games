@@ -1,17 +1,13 @@
 "use client"
 
-import { useEffect } from "react"
 import { motion } from "framer-motion"
 import { Trophy, Star, Zap, TrendingUp } from "lucide-react"
 import { GameButton } from "@/components/game-button"
 import { PlayerProfile } from "@/components/player-profile"
 import { useGame } from "@/lib/game-context"
-import { useAuth } from "@/lib/auth-context"
-import { saveUserProgress } from "@/lib/firestore-service"
 
 export function PreguntadosResult() {
   const { preguntadosScore, preguntadosQuestions, setScreen, startPreguntadosGame, playerProfile } = useGame()
-  const { user } = useAuth()
 
   const percentage = Math.round((preguntadosScore / preguntadosQuestions.length) * 100)
   
@@ -41,19 +37,6 @@ export function PreguntadosResult() {
   if (percentage === 100) {
     xpGained += 50
   }
-
-  // Sync score to Firestore if logged in
-  useEffect(() => {
-    if (user && playerProfile) {
-      saveUserProgress(user.uid, {
-        totalXP: playerProfile.level.totalXP,
-        gamesPlayed: playerProfile.gamesPlayed,
-        correctAnswers: playerProfile.correctAnswers,
-        preguntadosLastScore: preguntadosScore,
-        preguntadosLastPercentage: percentage,
-      }).catch(() => {})
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen bg-background flex flex-col p-6">

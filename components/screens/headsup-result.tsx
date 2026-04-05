@@ -5,24 +5,14 @@ import { motion } from "framer-motion"
 import { Check, X } from "lucide-react"
 import { GameButton } from "@/components/game-button"
 import { useGame } from "@/lib/game-context"
-import { useAuth } from "@/lib/auth-context"
-import { saveUserProgress } from "@/lib/firestore-service"
 
 export function HeadsupResult() {
   const { headsupCorrect, headsupPassed, setScreen, resetHeadsup, startHeadsupGame, playerProfile, updateProfile } = useGame()
-  const { user } = useAuth()
 
   useEffect(() => {
     if (!playerProfile) return
     const updated = { ...playerProfile, gamesPlayed: (playerProfile.gamesPlayed ?? 0) + 1 }
     updateProfile(updated)
-    if (user) {
-      saveUserProgress(user.uid, {
-        gamesPlayed: updated.gamesPlayed,
-        headsupLastScore: headsupCorrect.length,
-        headsupLastTotal: headsupCorrect.length + headsupPassed.length,
-      }).catch(() => {})
-    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePlayAgain = () => {

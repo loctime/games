@@ -4,8 +4,6 @@ import { useEffect } from "react"
 import { motion } from "framer-motion"
 import { GameButton } from "@/components/game-button"
 import { useGame } from "@/lib/game-context"
-import { useAuth } from "@/lib/auth-context"
-import { saveUserProgress } from "@/lib/firestore-service"
 
 export function ImpostorResult() {
   const {
@@ -19,7 +17,6 @@ export function ImpostorResult() {
     playerProfile,
     updateProfile,
   } = useGame()
-  const { user } = useAuth()
 
   // Count votes
   const voteCounts = votes.reduce((acc, vote) => {
@@ -39,12 +36,6 @@ export function ImpostorResult() {
     if (!playerProfile) return
     const updated = { ...playerProfile, gamesPlayed: (playerProfile.gamesPlayed ?? 0) + 1 }
     updateProfile(updated)
-    if (user) {
-      saveUserProgress(user.uid, {
-        gamesPlayed: updated.gamesPlayed,
-        impostorLastResult: impostorCaught ? "caught" : wasTie ? "tie" : "escaped",
-      }).catch(() => {})
-    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePlayAgain = () => {
