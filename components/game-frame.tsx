@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react"
 import { useGame } from "@/lib/game-context"
 import { useAuth } from "@/lib/auth-context"
 import { getGameById } from "@/lib/games-registry"
-import { saveUserProgress } from "@/lib/firestore-service"
+import { addXPAndSave, getOrCreatePlayer } from "@/lib/firestore-service"
 import { toast } from "sonner"
 
 interface GameFrameProps {
@@ -21,16 +21,41 @@ export function GameFrame({ gameId }: GameFrameProps) {
   const game = getGameById(gameId)
 
   const handleMessage = useCallback(
-    (event: MessageEvent) => {
-      if (!event.data || event.data.type !== "CONTROLGAMES_SCORE") return
-      const { gameId: msgGameId, score, label } = event.data
-      if (msgGameId !== gameId) return
+    async (event: MessageEvent) => {
+      if (!event.data) return
 
-      const displayLabel = label ?? game?.title ?? gameId
-      toast.success(`${displayLabel}: ${score} puntos`)
+      // Evento legacy — mantener compatibilidad con Rompecoco y otros
+      if (event.data.type === "CONTROLGAMES_SCORE") {
+        const { gameId: msgGameId, score, label } = event.data
+        if (msgGameId !== gameId) return
+        const displayLabel = label ?? game?.title ?? gameId
+        toast.success(`${displayLabel}: ${score} puntos`)
+        return
+      }
 
-      if (user) {
-        saveUserProgress(user.uid, { [`${gameId}Score`]: score }).catch(() => {})
+      // Nuevo sistema de plataforma global
+      if (event.data.type === "CG_EVENT") {
+        const { gameId: eventGameId, score = 0, metadata } = event.data
+        if (!user) return
+
+        try {
+          const player = await getOrCreatePlayer(
+            user.uid,
+            user.displayName ?? "Jugador"
+          )
+
+          const isFirstTime = !player.gamesUnique.includes(eventGameId)
+          let xp = 100
+          if (isFirstTime) xp += 200
+          if (metadata?.perfect === true) xp += 100
+
+          await addXPAndSave(user.uid, xp, eventGameId, score)
+
+          const gameLabel = game?.title ?? eventGameId
+          toast.success(`+${xp} XP — ${gameLabel}`)
+        } catch (err) {
+          console.error("CG_EVENT processing error:", err)
+        }
       }
     },
     [gameId, game?.title, user]
