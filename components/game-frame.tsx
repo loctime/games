@@ -109,14 +109,8 @@ export function GameFrame({ gameId }: GameFrameProps) {
         <div className="flex-1" />
         {playerProfile && user && (
           <>
-            {playerProfile.streak.current > 0 && (
-              <div className="flex items-center gap-1 text-sm font-medium">
-                <span>🔥</span>
-                <span>{playerProfile.streak.current}</span>
-              </div>
-            )}
             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
-              {playerProfile.level.level}
+              {(playerProfile as any).level}
             </div>
             <div className="text-xs text-muted-foreground max-w-20 truncate">
               {user.email}
@@ -130,7 +124,7 @@ export function GameFrame({ gameId }: GameFrameProps) {
         <div className="h-px bg-secondary">
           <div 
             className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${(playerProfile.level.currentXP / playerProfile.level.xpToNext) * 100}%` }}
+            style={{ width: `${((playerProfile as any).totalXP % 1000) / 10}%` }}
           />
         </div>
       )}
