@@ -14,7 +14,7 @@ interface GameFrameProps {
 }
 
 export function GameFrame({ gameId }: GameFrameProps) {
-  const { setScreen } = useGame()
+  const { setScreen, playerProfile } = useGame()
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -43,8 +43,7 @@ export function GameFrame({ gameId }: GameFrameProps) {
 
   const handleIframeLoad = useCallback(async () => {
     setLoading(false)
-    // SSO: send Firebase ID token to Rompecoco (same Firebase project)
-    if (gameId === "rompecabeza" && user && iframeRef.current?.contentWindow && game?.url) {
+    if (user && iframeRef.current?.contentWindow && game?.url) {
       try {
         const idToken = await user.getIdToken()
         iframeRef.current.contentWindow.postMessage(
@@ -52,10 +51,11 @@ export function GameFrame({ gameId }: GameFrameProps) {
           game.url
         )
       } catch {
-        // Token fetch failed silently — user stays as guest in Rompecoco
+        // Token fetch failed silently — user stays as guest
       }
     }
   }, [gameId, user, game?.url])
+
 
   if (!game?.url) {
     return (
@@ -81,7 +81,34 @@ export function GameFrame({ gameId }: GameFrameProps) {
         </button>
         <span className="font-bold text-foreground">{game.title}</span>
         <span className="text-xl ml-1">{game.icon}</span>
+        <div className="flex-1" />
+        {playerProfile && user && (
+          <>
+            {playerProfile.streak.current > 0 && (
+              <div className="flex items-center gap-1 text-sm font-medium">
+                <span>🔥</span>
+                <span>{playerProfile.streak.current}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+              {playerProfile.level.level}
+            </div>
+            <div className="text-xs text-muted-foreground max-w-20 truncate">
+              {user.email}
+            </div>
+          </>
+        )}
       </div>
+
+      {/* XP Bar */}
+      {playerProfile && (
+        <div className="h-px bg-secondary">
+          <div 
+            className="h-full bg-primary transition-all duration-300"
+            style={{ width: `${(playerProfile.level.currentXP / playerProfile.level.xpToNext) * 100}%` }}
+          />
+        </div>
+      )}
 
       {/* Loading overlay */}
       {loading && (
