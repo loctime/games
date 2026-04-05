@@ -1,9 +1,8 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Trophy, Flame, Star, Zap } from "lucide-react"
+import { Trophy, Gamepad2, Zap } from "lucide-react"
 import { useGame } from "@/lib/game-context"
-import type { PlayerProfile } from "@/src/lib/player/types"
 
 export function PlayerProfile() {
   const { playerProfile, loadingProfile } = useGame()
@@ -17,7 +16,9 @@ export function PlayerProfile() {
     )
   }
 
-  const xpPercentage = (playerProfile.level.currentXP / playerProfile.level.xpToNext) * 100
+  const p = playerProfile as any
+  const xpInLevel = p.totalXP % 1000
+  const xpPercentage = xpInLevel / 10
 
   return (
     <motion.div
@@ -29,20 +30,20 @@ export function PlayerProfile() {
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-sm">
-              {playerProfile.level.level}
+              {p.level}
             </span>
           </div>
           <div>
-            <p className="font-semibold text-foreground">Nivel {playerProfile.level.level}</p>
+            <p className="font-semibold text-foreground">Nivel {p.level}</p>
             <p className="text-xs text-muted-foreground">
-              {playerProfile.level.currentXP} / {playerProfile.level.xpToNext} XP
+              {xpInLevel} / 1000 XP
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-1">
           <Zap className="w-4 h-4 text-warning" />
-          <span className="font-semibold text-warning">{playerProfile.powerUps}</span>
+          <span className="font-semibold text-warning">{p.totalXP} XP</span>
         </div>
       </div>
 
@@ -59,33 +60,21 @@ export function PlayerProfile() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="bg-secondary/50 rounded-lg p-2">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Flame className="w-3 h-3 text-orange-500" />
-            <span className="text-xs text-muted-foreground">Racha</span>
-          </div>
-          <p className="font-bold text-foreground">{playerProfile.streak.current}</p>
-        </div>
-        
+      <div className="grid grid-cols-2 gap-2 text-center">
         <div className="bg-secondary/50 rounded-lg p-2">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Trophy className="w-3 h-3 text-yellow-500" />
             <span className="text-xs text-muted-foreground">Partidas</span>
           </div>
-          <p className="font-bold text-foreground">{playerProfile.gamesPlayed}</p>
+          <p className="font-bold text-foreground">{p.gamesPlayed}</p>
         </div>
-        
+
         <div className="bg-secondary/50 rounded-lg p-2">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <Star className="w-3 h-3 text-green-500" />
-            <span className="text-xs text-muted-foreground">Aciertos</span>
+            <Gamepad2 className="w-3 h-3 text-green-500" />
+            <span className="text-xs text-muted-foreground">Juegos</span>
           </div>
-          <p className="font-bold text-foreground">
-            {playerProfile.questionsAnswered > 0 
-              ? Math.round((playerProfile.correctAnswers / playerProfile.questionsAnswered) * 100)
-              : 0}%
-          </p>
+          <p className="font-bold text-foreground">{p.gamesUnique?.length ?? 0}</p>
         </div>
       </div>
     </motion.div>
